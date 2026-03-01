@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import BaseModal from '@/components/BaseModal.vue';
 
 const mostrarModal = ref(false);
 const nuevaTarea = ref({ titulo: '', prioridad: 'Media', fecha: '' });
@@ -7,7 +8,7 @@ const nuevaTarea = ref({ titulo: '', prioridad: 'Media', fecha: '' });
 const guardarTarea = () => {
   alert(`Tarea guardada: ${nuevaTarea.value.titulo} | Prioridad: ${nuevaTarea.value.prioridad}`);
   mostrarModal.value = false;
-  nuevaTarea.value = { titulo: '', prioridad: 'Media', fecha: '' }; // Limpiar
+  nuevaTarea.value = { titulo: '', prioridad: 'Media', fecha: '' };
 };
 </script>
 
@@ -31,36 +32,34 @@ const guardarTarea = () => {
       </div>
     </div>
 
-    <div class="modal-overlay" v-if="mostrarModal">
-      <div class="modal-content">
-        <h2>Crear Nueva Tarea</h2>
-        
+    <BaseModal v-if="mostrarModal" width="500px" @close="mostrarModal = false">
+      <h2>Crear Nueva Tarea</h2>
+
+      <div class="form-group">
+        <label>Título de la tarea</label>
+        <input type="text" v-model="nuevaTarea.titulo" placeholder="Ej. Terminar diagrama de clases..." class="form-control">
+      </div>
+
+      <div class="form-row">
         <div class="form-group">
-          <label>Título de la tarea</label>
-          <input type="text" v-model="nuevaTarea.titulo" placeholder="Ej. Terminar diagrama de clases..." class="form-control">
+          <label>Prioridad</label>
+          <select v-model="nuevaTarea.prioridad" class="form-control">
+            <option>Alta</option>
+            <option>Media</option>
+            <option>Baja</option>
+          </select>
         </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Prioridad</label>
-            <select v-model="nuevaTarea.prioridad" class="form-control">
-              <option>Alta</option>
-              <option>Media</option>
-              <option>Baja</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Fecha de Vencimiento</label>
-            <input type="date" v-model="nuevaTarea.fecha" class="form-control">
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button class="btn-text" @click="mostrarModal = false">Cancelar</button>
-          <button class="btn-primary" @click="guardarTarea">Guardar Tarea</button>
+        <div class="form-group">
+          <label>Fecha de Vencimiento</label>
+          <input type="date" v-model="nuevaTarea.fecha" class="form-control">
         </div>
       </div>
-    </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" @click="mostrarModal = false">Cancelar</button>
+        <button class="btn-primary" @click="guardarTarea">Guardar Tarea</button>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -77,10 +76,7 @@ const guardarTarea = () => {
 .badge { font-size: 0.75rem; padding: 3px 8px; border-radius: 12px; font-weight: 600; }
 .badge-alta { background: #fee2e2; color: #dc2626; }
 
-
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 50;}
-.modal-content { background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 500px; }
-.modal-content h2 { margin: 0 0 20px 0; color: #0f172a; }
+h2 { margin: 0 0 20px 0; color: #0f172a; }
 .form-group { margin-bottom: 20px; display: flex; flex-direction: column; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 label { font-size: 0.9rem; font-weight: 600; color: #475569; margin-bottom: 8px; }

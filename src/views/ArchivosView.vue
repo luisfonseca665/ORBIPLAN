@@ -1,5 +1,7 @@
 <script setup>
 import { ref } from 'vue';
+import BaseModal from '@/components/BaseModal.vue';
+
 const mostrarModal = ref(false);
 const archivoSeleccionado = ref(null);
 const formatosPermitidos = ".pdf,.docx,.pptx,.xlsx,.jpg,.jpeg,.png,.gif";
@@ -12,7 +14,7 @@ const confirmarSubida = () => {
   if(archivoSeleccionado.value) {
     alert(`Archivo subido de: ${archivoSeleccionado.value.name}`);
     mostrarModal.value = false;
-    archivoSeleccionado.value = null; 
+    archivoSeleccionado.value = null;
   }
 };
 </script>
@@ -35,28 +37,26 @@ const confirmarSubida = () => {
       <div class="item-archivo documento"><div class="icono">📄</div><p>Informe_Ventas.pdf</p></div>
     </div>
 
-    <div class="modal-overlay" v-if="mostrarModal">
-      <div class="modal-content">
-        <h2>Subir nuevo archivo</h2>
-        <p class="modal-info">Formatos permitidos: PDF, Word, Excel, PowerPoint, JPG, PNG, GIF.</p>
-        
-        <div class="file-upload-box">
-          <input 
-            type="file" 
-            :accept="formatosPermitidos" 
-            @change="manejarSeleccion"
-            class="file-input"
-          >
-        </div>
+    <BaseModal v-if="mostrarModal" width="450px" @close="mostrarModal = false">
+      <h2>Subir nuevo archivo</h2>
+      <p class="modal-info">Formatos permitidos: PDF, Word, Excel, PowerPoint, JPG, PNG, GIF.</p>
 
-        <div class="modal-actions">
-          <button class="btn-text" @click="mostrarModal = false">Cancelar</button>
-          <button class="btn-primary" @click="confirmarSubida" :disabled="!archivoSeleccionado">
-            Subir al servidor
-          </button>
-        </div>
+      <div class="file-upload-box">
+        <input
+          type="file"
+          :accept="formatosPermitidos"
+          @change="manejarSeleccion"
+          class="file-input"
+        >
       </div>
-    </div>
+
+      <div class="modal-actions">
+        <button class="btn-text" @click="mostrarModal = false">Cancelar</button>
+        <button class="btn-primary" @click="confirmarSubida" :disabled="!archivoSeleccionado">
+          Subir al servidor
+        </button>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -77,19 +77,7 @@ const confirmarSubida = () => {
 .icono { font-size: 45px; margin-bottom: 12px; }
 .item-archivo p { margin: 0; font-size: 0.9rem; color: #334155; font-weight: 500; word-wrap: break-word; }
 
-.modal-overlay {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 50;
-}
-.modal-content {
-  background: white; padding: 30px; border-radius: 16px;
-  width: 100%; max-width: 450px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
-}
-.modal-content h2 { margin: 0 0 10px 0; color: #0f172a; }
+h2 { margin: 0 0 10px 0; color: #0f172a; }
 .modal-info { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
 .file-upload-box {
   border: 2px dashed #cbd5e1; padding: 30px; text-align: center;
