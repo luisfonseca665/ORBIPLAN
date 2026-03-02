@@ -41,8 +41,8 @@
       <div v-else class="auth-form-container">
         <form @submit.prevent="handleRegister" class="auth-form">
           <div class="form-group">
-            <label>Nombre*</label>
-            <input v-model="registerForm.nombre" type="text" placeholder="Nombre" required />
+            <label>Correo*</label>
+            <input v-model="registerForm.email" type="email" placeholder="Correo" required />
           </div>
           <div class="form-group">
             <label>Contraseña*</label>
