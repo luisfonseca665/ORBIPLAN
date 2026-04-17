@@ -13,17 +13,17 @@
     <div class="grid-archivos">
       <div class="item-archivo carpeta">
         <div class="icono">📁</div>
-        <p>Reportes ITSUR</p>
+        <p class="file-name">Reportes ITSUR</p>
       </div>
       
       <div v-for="arc in listaArchivos" :key="arc" class="item-archivo documento">
         <div class="icono">📄</div>
-        <p>{{ arc }}</p>
+        <p class="file-name">{{ arc }}</p>
       </div>
     </div>
 
-    <BaseModal v-if="mostrarModal" width="450px" @close="mostrarModal = false">
-      <h2>Subir nuevo archivo</h2>
+    <BaseModal v-if="mostrarModal" width="480px" @close="mostrarModal = false">
+      <h2 class="modal-title">Subir nuevo archivo</h2>
       <p class="modal-info">Selecciona un archivo de tu equipo.</p>
 
       <div class="file-upload-box">
@@ -112,18 +112,162 @@ onMounted(obtenerArchivos);
 </script>
 
 <style scoped>
-.page-title { margin: 0; color: #0f172a; font-size: 1.8rem; }
-.subtitle { margin: 5px 0 20px 0; color: #64748b; }
-.header-actions { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-.btn-primary { background-color: #3b82f6; color: white; padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background-color: #2563eb; }
-.btn-primary:disabled { background-color: #93c5fd; cursor: not-allowed; }
+.page-title { 
+  margin: 0; 
+  color: #3E2C25; 
+  font-size: 2.2rem; 
+  font-weight: 700; 
+  letter-spacing: -0.03em; 
+}
 
-.grid-archivos { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 20px; }
-.item-archivo { background: white; padding: 25px 15px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; }
-.icono { font-size: 45px; margin-bottom: 12px; }
+.subtitle { 
+  margin: 6px 0 30px 0; 
+  color: #857D78; 
+  font-size: 1rem; 
+}
 
-.file-upload-box { border: 2px dashed #cbd5e1; padding: 30px; border-radius: 10px; background: #f8fafc; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px; }
-.btn-text { background: none; border: none; color: #64748b; font-weight: 600; cursor: pointer; }
+.header-actions { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-start; 
+  margin-bottom: 35px; 
+}
+
+.btn-primary { 
+  background-color: #728DA6; 
+  color: white; 
+  padding: 12px 24px; 
+  border-radius: 8px; 
+  border: none; 
+  font-weight: 500; 
+  font-family: inherit;
+  cursor: pointer; 
+  transition: all 0.3s ease; 
+  box-shadow: 0 2px 8px rgba(114, 141, 166, 0.15); 
+}
+
+.btn-primary:hover:not(:disabled) { 
+  background-color: #5A748A; 
+  transform: translateY(-1px); 
+  box-shadow: 0 4px 12px rgba(114, 141, 166, 0.25); 
+}
+
+.btn-primary:disabled { 
+  background-color: #C0BBB6; 
+  box-shadow: none; 
+  cursor: not-allowed; 
+}
+
+.grid-archivos { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+  gap: 24px; 
+}
+
+.item-archivo { 
+  background: #FFFFFF; 
+  padding: 30px 20px; 
+  border-radius: 12px; 
+  text-align: center; 
+  border: 1px solid #E8E6E1; 
+  transition: all 0.2s ease; 
+  box-shadow: 0 4px 16px rgba(62, 44, 37, 0.03); 
+  cursor: pointer; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-archivo:hover { 
+  transform: translateY(-4px); 
+  box-shadow: 0 8px 24px rgba(62, 44, 37, 0.08); 
+  border-color: #D1CEC7; 
+}
+
+.icono { 
+  font-size: 48px; 
+  margin-bottom: 16px; 
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.04)); 
+}
+
+.file-name { 
+  margin: 0; 
+  color: #4A403B; 
+  font-weight: 500; 
+  font-size: 0.95rem; 
+  word-break: break-word; 
+}
+
+.modal-title { 
+  margin: 0 0 8px 0; 
+  color: #3E2C25; 
+  font-size: 1.4rem; 
+}
+
+.modal-info { 
+  color: #857D78; 
+  margin-bottom: 24px; 
+  font-size: 0.95rem; 
+}
+
+.file-upload-box { 
+  border: 2px dashed #D1CEC7; 
+  padding: 40px 20px; 
+  border-radius: 12px; 
+  background: #FAFAF9; 
+  text-align: center; 
+  transition: background 0.3s ease, border-color 0.3s ease; 
+}
+
+.file-upload-box:hover { 
+  background: #F4F7FA; 
+  border-color: #728DA6; 
+}
+
+.file-input { 
+  width: 100%; 
+  color: #6A625D; 
+  font-family: inherit; 
+}
+
+/* Estilo para el botón por defecto de "Seleccionar archivo" */
+.file-input::file-selector-button { 
+  background: white; 
+  border: 1px solid #E8E6E1; 
+  padding: 8px 16px; 
+  border-radius: 6px; 
+  color: #4A403B; 
+  cursor: pointer; 
+  font-weight: 500; 
+  font-family: inherit;
+  margin-right: 15px; 
+  transition: all 0.2s ease; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.file-input::file-selector-button:hover { 
+  background: #F0EEEA; 
+}
+
+.modal-actions { 
+  display: flex; 
+  justify-content: flex-end; 
+  gap: 15px; 
+  margin-top: 30px; 
+}
+
+.btn-text { 
+  background: none; 
+  border: none; 
+  color: #857D78; 
+  font-weight: 500; 
+  font-family: inherit;
+  cursor: pointer; 
+  transition: color 0.2s ease; 
+}
+
+.btn-text:hover { 
+  color: #3E2C25; 
+}
 </style>
