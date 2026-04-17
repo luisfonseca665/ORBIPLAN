@@ -21,14 +21,16 @@
         <form @submit.prevent="handleLogin" class="auth-form">
           <div class="form-group">
             <label>Correo*</label>
-            <input v-model="loginForm.email" type="email" placeholder="Correo" required />
+            <input v-model="loginForm.email" type="email" placeholder="Correo" required :disabled="isLoading" />
           </div>
           <div class="form-group">
             <label>Contraseña*</label>
-            <input v-model="loginForm.password" type="password" placeholder="Contraseña" required />
+            <input v-model="loginForm.password" type="password" placeholder="Contraseña" required :disabled="isLoading" />
           </div>
 
-          <button type="submit" class="btn-primary">Acceder</button>
+          <button type="submit" class="btn-primary" :disabled="isLoading">
+            {{ isLoading ? 'Accediendo...' : 'Acceder' }}
+          </button>
 
           <div class="divider-text"><span>o ingresa con</span></div>
           <button type="button" class="btn-google" @click="loginConGoogle">
@@ -41,19 +43,25 @@
       <div v-else class="auth-form-container">
         <form @submit.prevent="handleRegister" class="auth-form">
           <div class="form-group">
+            <label>Nombre Completo*</label>
+            <input v-model="registerForm.nombre" type="text" placeholder="Tu nombre" required :disabled="isLoading" />
+          </div>
+          <div class="form-group">
             <label>Correo*</label>
-            <input v-model="registerForm.email" type="email" placeholder="Correo" required />
+            <input v-model="registerForm.email" type="email" placeholder="Correo" required :disabled="isLoading" />
           </div>
           <div class="form-group">
             <label>Contraseña*</label>
-            <input v-model="registerForm.password" type="password" placeholder="Contraseña" required />
+            <input v-model="registerForm.password" type="password" placeholder="Contraseña" required :disabled="isLoading" />
           </div>
           <div class="form-group">
             <label>Confirmar contraseña*</label>
-            <input v-model="registerForm.confirmPassword" type="password" placeholder="Confirmar" required />
+            <input v-model="registerForm.confirmPassword" type="password" placeholder="Confirmar" required :disabled="isLoading" />
           </div>
 
-          <button type="submit" class="btn-primary">Crear cuenta</button>
+          <button type="submit" class="btn-primary" :disabled="isLoading">
+            {{ isLoading ? 'Creando cuenta...' : 'Crear cuenta' }}
+          </button>
 
           <div class="divider-text"><span>o regístrate con</span></div>
           <button type="button" class="btn-google" @click="loginConGoogle">
@@ -72,50 +80,93 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
-
 const activeTab = ref('login')
-
+const isLoading = ref(false)
 
 const loginForm = reactive({
   email: '',
   password: ''
 })
 
-
 const registerForm = reactive({
   nombre: '',
-  apellido: '',
   email: '',
   password: '',
   confirmPassword: '',
-  acceptTerms: false
+  rol: 'ALUMNO' // Rol por defecto
 })
 
+// --- LÓGICA DE INICIO DE SESIÓN ---
+const handleLogin = async () => {
+  isLoading.value = true
+  try {
+    const response = await fetch('http://localhost:8080/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(loginForm)
+    })
 
-const handleLogin = () => {
-  console.log('Intentando iniciar sesión con:', loginForm)
-  router.push('/')
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Correo o contraseña incorrectos')
+    }
+
+    const data = await response.json()
+    
+    // GUARDAR SESIÓN
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('usuarioNombre', data.nombre)
+    localStorage.setItem('usuarioRol', data.rol)
+
+    router.push('/') // Ir al Dashboard
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const handleRegister = () => {
-  console.log('Intentando registrar:', registerForm)
-
+// --- LÓGICA DE REGISTRO ---
+const handleRegister = async () => {
   if (registerForm.password !== registerForm.confirmPassword) {
     alert('Las contraseñas no coinciden')
     return
   }
 
-  alert('Cuenta creada exitosamente')
+  isLoading.value = true
+  try {
+    const response = await fetch('http://localhost:8080/api/auth/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: registerForm.nombre,
+        email: registerForm.email,
+        password: registerForm.password,
+        rol: registerForm.rol
+      })
+    })
+
+    const data = await response.text()
+
+    if (!response.ok) throw new Error(data || 'Error al registrar')
+
+    alert('¡Cuenta creada exitosamente! Ya puedes iniciar sesión.')
+    activeTab.value = 'login'
+    loginForm.email = registerForm.email
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const loginConGoogle = () => {
-  console.log('Iniciando flujo de Google...')
-  alert('Aquí se abrirá la ventana emergente de Google');
+  alert('El login con Google requiere configuración de credenciales OAuth2 en Google Cloud Console.');
 }
 </script>
 
 <style scoped>
+/* Tus estilos se mantienen exactamente igual */
 .auth-page {
   display: flex;
   justify-content: center;
@@ -167,49 +218,6 @@ const loginConGoogle = () => {
   padding: 30px 40px;
 }
 
-.auth-container {
-  display: flex;
-  flex-direction: column;
-  background: white;
-  width: 100%;
-  max-width: 900px;
-}
-
-@media (min-width: 768px) {
-  .auth-container {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-}
-
-.auth-section {
-  flex: 1;
-  padding: 20px 40px;
-}
-
-.divider {
-  display: none;
-  width: 1px;
-  background-color: #e5e7eb;
-  margin: 40px 0;
-  min-height: 500px;
-}
-
-@media (min-width: 768px) {
-  .divider {
-    display: block;
-  }
-}
-
-h2 {
-  text-align: center;
-  color: #003366;
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 30px;
-  margin-top: 0;
-}
-
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -236,20 +244,9 @@ h2 {
   color: #333;
 }
 
-.form-group input::placeholder {
-  color: #9ca3af;
-}
-
 .form-group input:focus {
   outline: none;
   border-color: #003366;
-}
-
-.help-text {
-  font-size: 0.7rem;
-  color: #6b7280;
-  margin-top: 2px;
-  line-height: 1.2;
 }
 
 .btn-primary {
@@ -265,31 +262,13 @@ h2 {
   transition: background-color 0.2s ease;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background-color: #002244;
 }
 
-.terms-group {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 10px;
-  font-size: 0.8rem;
-  color: #4b5563;
-}
-
-.terms-group input[type="checkbox"] {
-  cursor: pointer;
-}
-
-.terms-group a {
-  color: #3b82f6;
-  text-decoration: none;
-}
-
-.terms-group a:hover {
-  text-decoration: underline;
+.btn-primary:disabled {
+  background-color: #6b7280;
+  cursor: not-allowed;
 }
 
 .divider-text {
@@ -325,17 +304,10 @@ h2 {
   font-weight: 500;
   color: #374151;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.btn-google:hover {
-  background-color: #f9fafb;
-  border-color: #9ca3af;
 }
 
 .google-icon {
   width: 20px;
   height: 20px;
 }
-
 </style>

@@ -43,4 +43,23 @@ const router = createRouter({
   ]
 })
 
+// --- EL GUARDIÁN DE SEGURIDAD ---
+router.beforeEach((to, from, next) => {
+  // Verificamos si existe un token en el almacenamiento local [cite: 148]
+  const isAuthenticated = localStorage.getItem('token');
+
+  // Si el usuario intenta ir a cualquier ruta que NO sea login y no está autenticado
+  if (to.name !== 'login' && !isAuthenticated) {
+    next({ name: 'login' }); // Redirigir al login
+  } 
+  // Si ya está autenticado e intenta ir al login, lo mandamos al dashboard
+  else if (to.name === 'login' && isAuthenticated) {
+    next({ name: 'dashboard' });
+  } 
+  // En cualquier otro caso, permitir la navegación
+  else {
+    next();
+  }
+});
+
 export default router
