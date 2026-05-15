@@ -75,6 +75,7 @@
 </template>
 
 <script setup>
+/* global google */
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -214,14 +215,6 @@ const handleRegister = async () => {
     alert(error.message)
   } finally {
     isLoading.value = false
-  }
-}
-
-const loginConGoogle = () => {
-  if (clienteGoogle) {
-    clienteGoogle.requestAccessToken();
-  } else {
-    alert('Google Sign-In no está cargado.');
   }
 }
 
@@ -377,33 +370,6 @@ const loginConGoogle = () => {
 
 .divider-text span {
   padding: 0 15px;
-}
-
-.btn-google {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  width: 100%;
-  padding: 12px;
-  background-color: white;
-  border: 1px solid #E8E6E1;
-  border-radius: 8px;
-  font-weight: 500;
-  color: #4A403B;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.2s ease, border-color 0.2s ease;
-}
-
-.btn-google:hover {
-  background-color: #FAFAF9;
-  border-color: #D1CEC7;
-}
-
-.google-icon {
-  width: 22px;
-  height: 22px;
 }
 
 @media (max-width: 480px) {
