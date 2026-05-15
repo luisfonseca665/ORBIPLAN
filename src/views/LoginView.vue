@@ -17,7 +17,7 @@
         </button>
       </div>
 
-      <div v-if="activeTab === 'login'" class="auth-form-container">
+      <div v-show="activeTab === 'login'" class="auth-form-container">
         <form @submit.prevent="handleLogin" class="auth-form">
           <div class="form-group">
             <label>Correo electrónico</label>
@@ -33,14 +33,12 @@
           </button>
 
           <div class="divider-text"><span>o ingresa con</span></div>
-          <button type="button" class="btn-google" @click="loginConGoogle">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="google-icon">
-            Continuar con Google
-          </button>
+
+          <div id="googleButtonLogin" style="display: flex; justify-content: center; width: 100%;"></div>
         </form>
       </div>
 
-      <div v-else class="auth-form-container">
+      <div v-show="activeTab === 'register'" class="auth-form-container">
         <form @submit.prevent="handleRegister" class="auth-form">
           <div class="form-group">
             <label>Nombre Completo</label>
@@ -50,7 +48,7 @@
             <label>Correo electrónico</label>
             <input v-model="registerForm.email" type="email" placeholder="ejemplo@correo.com" required :disabled="isLoading" />
           </div>
-          
+
           <div class="form-row">
             <div class="form-group">
               <label>Contraseña</label>
@@ -66,11 +64,9 @@
             {{ isLoading ? 'Creando cuenta...' : 'Crear cuenta' }}
           </button>
 
-          <div class="divider-text"><span>o regístrate con</span></div>
-          <button type="button" class="btn-google" @click="loginConGoogle">
-            <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="google-icon">
-            Registrarse con Google
-          </button>
+          <div class="divider-text"><span>o ingresa con</span></div>
+
+          <div id="googleButtonRegister" style="display: flex; justify-content: center; width: 100%;"></div>
         </form>
       </div>
 
@@ -79,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -99,6 +95,64 @@ const registerForm = reactive({
   rol: 'ALUMNO' // Rol por defecto
 })
 
+// Google Sign-In callback
+const handleCredentialResponse = async (response) => {
+  isLoading.value = true
+  try {
+    // Send the JWT to backend for verification
+    const backendResponse = await fetch('http://localhost:8080/api/auth/google-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    })
+
+    if (!backendResponse.ok) {
+      throw new Error('Error al iniciar sesión con Google')
+    }
+
+    const data = await backendResponse.json()
+
+    // GUARDAR SESIÓN
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('usuarioNombre', data.nombre)
+    localStorage.setItem('usuarioRol', data.rol)
+
+    router.push('/') // Ir al Dashboard
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Initialize Google Sign-In
+onMounted(() => {
+  if (window.google) {
+    google.accounts.id.initialize({
+      client_id: '147964474689-jvm90rjcd7d4dq9eojrgbusrapl9bmhd.apps.googleusercontent.com',
+      callback: handleCredentialResponse
+    });
+
+    // Le decimos a Google que dibuje su botón en la pestaña de Login
+    const botonLogin = document.getElementById("googleButtonLogin");
+    if (botonLogin) {
+      google.accounts.id.renderButton(
+        botonLogin,
+        { theme: "outline", size: "large", width: 400, text: "signin_with" }
+      );
+    }
+
+    // Le decimos a Google que dibuje su botón en la pestaña de Registro
+    const botonRegistro = document.getElementById("googleButtonRegister");
+    if (botonRegistro) {
+      google.accounts.id.renderButton(
+        botonRegistro,
+        { theme: "outline", size: "large", width: 400, text: "signup_with" }
+      );
+    }
+  }
+})
+
 // --- LÓGICA DE INICIO DE SESIÓN ---
 const handleLogin = async () => {
   isLoading.value = true
@@ -115,7 +169,7 @@ const handleLogin = async () => {
     }
 
     const data = await response.json()
-    
+
     // GUARDAR SESIÓN
     localStorage.setItem('token', data.token)
     localStorage.setItem('usuarioNombre', data.nombre)
@@ -164,8 +218,13 @@ const handleRegister = async () => {
 }
 
 const loginConGoogle = () => {
-  alert('El login con Google requiere configuración de credenciales OAuth2 en Google Cloud Console.');
+  if (clienteGoogle) {
+    clienteGoogle.requestAccessToken();
+  } else {
+    alert('Google Sign-In no está cargado.');
+  }
 }
+
 </script>
 
 <style scoped>
@@ -248,6 +307,8 @@ const loginConGoogle = () => {
 }
 
 .form-group input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 12px 16px;
   border: 1px solid #E8E6E1;
   border-radius: 8px;
@@ -344,4 +405,17 @@ const loginConGoogle = () => {
   width: 22px;
   height: 22px;
 }
+
+@media (max-width: 480px) {
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+
+  .auth-form-container {
+    padding: 25px 20px;
+  }
+}
+
 </style>
