@@ -7,23 +7,78 @@ const listaTareas = ref([]);
 const nuevaTarea = ref({ titulo: '', prioridad: 'MEDIA', fechaVencimiento: '' });
 const isLoading = ref(false);
 const token = localStorage.getItem('token');
+const mostrandoArchivados = ref(false);
 
 const cargarTareas = async () => {
   try {
-    const res = await fetch('http://localhost:8080/api/tareas', {
+    const endpoint = mostrandoArchivados.value ? 'http://localhost:8080/api/tareas/archivadas' : 'http://localhost:8080/api/tareas';
+    const res = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) listaTareas.value = await res.json();
   } catch (e) { console.error("Error al cargar tareas", e); }
 };
 
+const toggleVistaArchivados = () => {
+  mostrandoArchivados.value = !mostrandoArchivados.value;
+  cargarTareas();
+};
+
+const modoEdicion = ref(false);
+const idEdicion = ref(null);
+
+const abrirModalNueva = () => {
+  modoEdicion.value = false;
+  idEdicion.value = null;
+  nuevaTarea.value = { titulo: '', prioridad: 'MEDIA', fechaVencimiento: '' };
+  mostrarModal.value = true;
+};
+
+const editarTarea = (tarea) => {
+  modoEdicion.value = true;
+  idEdicion.value = tarea.id;
+  nuevaTarea.value = { ...tarea };
+  mostrarModal.value = true;
+};
+
+const eliminarTarea = async (id) => {
+  if (!confirm("¿Seguro que deseas eliminar esta tarea permanentemente?")) return;
+  isLoading.value = true;
+  try {
+    const res = await fetch(`http://localhost:8080/api/tareas/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) cargarTareas();
+    else alert("Error al eliminar");
+  } catch(e) { alert("Error de conexión"); }
+  finally { isLoading.value = false; }
+};
+
+const alternarArchivoTarea = async (tarea) => {
+  isLoading.value = true;
+  const action = tarea.archivado ? 'desarchivar' : 'archivar';
+  try {
+    const res = await fetch(`http://localhost:8080/api/tareas/${tarea.id}/${action}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) cargarTareas();
+    else alert(`Error al ${action} tarea`);
+  } catch(e) { alert("Error de conexión"); }
+  finally { isLoading.value = false; }
+};
+
 const guardarTarea = async () => {
   if (!nuevaTarea.value.titulo) return alert("Escribe el nombre de la tarea");
 
   isLoading.value = true;
+  const url = modoEdicion.value ? `http://localhost:8080/api/tareas/${idEdicion.value}` : 'http://localhost:8080/api/tareas';
+  const method = modoEdicion.value ? 'PUT' : 'POST';
+
   try {
-    const res = await fetch('http://localhost:8080/api/tareas', {
-      method: 'POST',
+    const res = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -32,10 +87,10 @@ const guardarTarea = async () => {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      alert("✅ " + data.mensaje);
       mostrarModal.value = false;
       nuevaTarea.value = { titulo: '', prioridad: 'MEDIA', fechaVencimiento: '' };
+      modoEdicion.value = false;
+      idEdicion.value = null;
       cargarTareas();
     } else {
       alert("❌ Error al guardar la tarea");
@@ -52,9 +107,14 @@ onMounted(cargarTareas);
     <div class="header-actions">
       <div>
         <h1 class="page-title">Mis Tareas</h1>
-        <p class="subtitle">Control de actividades</p>
+        <p class="subtitle">{{ mostrandoArchivados ? 'Tareas Archivadas' : 'Control de actividades' }}</p>
       </div>
-      <button class="btn-primary" @click="mostrarModal = true">+ Nueva Tarea</button>
+      <div class="header-buttons">
+        <button class="btn-text" @click="toggleVistaArchivados">
+          {{ mostrandoArchivados ? 'Ver Activas' : 'Ver Archivadas' }}
+        </button>
+        <button v-if="!mostrandoArchivados" class="btn-primary" @click="abrirModalNueva">+ Nueva Tarea</button>
+      </div>
     </div>
 
     <div class="lista-tareas-container">
@@ -70,6 +130,13 @@ onMounted(cargarTareas);
               <span v-if="tarea.fechaVencimiento" class="fecha-venc"> 📅 {{ tarea.fechaVencimiento }}</span>
             </div>
           </div>
+          <div class="tarea-actions">
+            <button v-if="!mostrandoArchivados" class="btn-icon btn-edit" @click="editarTarea(tarea)" title="Editar">✏️</button>
+            <button class="btn-icon btn-archive" @click="alternarArchivoTarea(tarea)" :title="tarea.archivado ? 'Desarchivar' : 'Archivar'">
+              {{ tarea.archivado ? '📤' : '🗃️' }}
+            </button>
+            <button class="btn-icon btn-delete" @click="eliminarTarea(tarea.id)" title="Eliminar">🗑️</button>
+          </div>
         </div>
       </div>
 
@@ -79,7 +146,7 @@ onMounted(cargarTareas);
     </div>
 
     <BaseModal v-if="mostrarModal" width="500px" @close="mostrarModal = false">
-      <h2 class="modal-title">Crear Nueva Tarea</h2>
+      <h2 class="modal-title">{{ modoEdicion ? 'Editar Tarea' : 'Crear Nueva Tarea' }}</h2>
 
       <div class="form-group">
         <label>Título de la tarea</label>
@@ -137,6 +204,12 @@ onMounted(cargarTareas);
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 35px;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
 
 .btn-primary {
@@ -202,6 +275,32 @@ onMounted(cargarTareas);
   display: flex;
   flex-direction: column;
   gap: 8px;
+  flex: 1;
+}
+
+.tarea-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tarea-card:hover .tarea-actions {
+  opacity: 1;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-icon:hover {
+  background: #F0EEEA;
 }
 
 .tarea-info h4 {

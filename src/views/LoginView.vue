@@ -117,6 +117,11 @@ const handleCredentialResponse = async (response) => {
     localStorage.setItem('token', data.token)
     localStorage.setItem('usuarioNombre', data.nombre)
     localStorage.setItem('usuarioRol', data.rol)
+    if (data.foto) {
+      localStorage.setItem('usuarioFoto', data.foto)
+    } else {
+      localStorage.removeItem('usuarioFoto')
+    }
 
     router.push('/') // Ir al Dashboard
   } catch (error) {
@@ -175,6 +180,11 @@ const handleLogin = async () => {
     localStorage.setItem('token', data.token)
     localStorage.setItem('usuarioNombre', data.nombre)
     localStorage.setItem('usuarioRol', data.rol)
+    if (data.foto) {
+      localStorage.setItem('usuarioFoto', data.foto)
+    } else {
+      localStorage.removeItem('usuarioFoto')
+    }
 
     router.push('/') // Ir al Dashboard
   } catch (error) {

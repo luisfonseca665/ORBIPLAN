@@ -7,23 +7,78 @@ const listaNotas = ref([]);
 const nuevaNota = ref({ titulo: '', contenido: '' });
 const isLoading = ref(false);
 const token = localStorage.getItem('token');
+const mostrandoArchivados = ref(false);
 
 const cargarNotas = async () => {
   try {
-    const res = await fetch('http://localhost:8080/api/notas', {
+    const endpoint = mostrandoArchivados.value ? 'http://localhost:8080/api/notas/archivadas' : 'http://localhost:8080/api/notas';
+    const res = await fetch(endpoint, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (res.ok) listaNotas.value = await res.json();
   } catch (e) { console.error("Error al cargar notas", e); }
 };
 
+const toggleVistaArchivados = () => {
+  mostrandoArchivados.value = !mostrandoArchivados.value;
+  cargarNotas();
+};
+
+const modoEdicion = ref(false);
+const idEdicion = ref(null);
+
+const abrirModalNueva = () => {
+  modoEdicion.value = false;
+  idEdicion.value = null;
+  nuevaNota.value = { titulo: '', contenido: '' };
+  mostrarModal.value = true;
+};
+
+const editarNota = (nota) => {
+  modoEdicion.value = true;
+  idEdicion.value = nota.id;
+  nuevaNota.value = { ...nota };
+  mostrarModal.value = true;
+};
+
+const eliminarNota = async (id) => {
+  if (!confirm("¿Seguro que deseas eliminar esta nota permanentemente?")) return;
+  isLoading.value = true;
+  try {
+    const res = await fetch(`http://localhost:8080/api/notas/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) cargarNotas();
+    else alert("Error al eliminar");
+  } catch(e) { alert("Error de conexión"); }
+  finally { isLoading.value = false; }
+};
+
+const alternarArchivoNota = async (nota) => {
+  isLoading.value = true;
+  const action = nota.archivado ? 'desarchivar' : 'archivar';
+  try {
+    const res = await fetch(`http://localhost:8080/api/notas/${nota.id}/${action}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) cargarNotas();
+    else alert(`Error al ${action} nota`);
+  } catch(e) { alert("Error de conexión"); }
+  finally { isLoading.value = false; }
+};
+
 const guardarNota = async () => {
   if (!nuevaNota.value.titulo) return alert("Ponle un título a tu nota");
 
   isLoading.value = true;
+  const url = modoEdicion.value ? `http://localhost:8080/api/notas/${idEdicion.value}` : 'http://localhost:8080/api/notas';
+  const method = modoEdicion.value ? 'PUT' : 'POST';
+
   try {
-    const res = await fetch('http://localhost:8080/api/notas', {
-      method: 'POST',
+    const res = await fetch(url, {
+      method: method,
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -32,10 +87,10 @@ const guardarNota = async () => {
     });
 
     if (res.ok) {
-      const data = await res.json();
-      alert("✅ " + data.mensaje);
       mostrarModal.value = false;
       nuevaNota.value = { titulo: '', contenido: '' };
+      modoEdicion.value = false;
+      idEdicion.value = null;
       cargarNotas();
     } else {
       alert("❌ Error al guardar la nota");
@@ -52,14 +107,28 @@ onMounted(cargarNotas);
     <div class="header-actions">
       <div>
         <h1 class="page-title">Mis Notas</h1>
-        <p class="subtitle">Bloc digital de ORBIPLAN</p>
+        <p class="subtitle">{{ mostrandoArchivados ? 'Notas Archivadas' : 'Bloc digital de ORBIPLAN' }}</p>
       </div>
-      <button class="btn-primary" @click="mostrarModal = true">+ Nueva Nota</button>
+      <div class="header-buttons">
+        <button class="btn-text" @click="toggleVistaArchivados">
+          {{ mostrandoArchivados ? 'Ver Activas' : 'Ver Archivadas' }}
+        </button>
+        <button v-if="!mostrandoArchivados" class="btn-primary" @click="abrirModalNueva">+ Nueva Nota</button>
+      </div>
     </div>
 
     <div class="grid-notas">
       <div v-for="nota in listaNotas" :key="nota.id" class="nota-card">
-        <h3>{{ nota.titulo }}</h3>
+        <div class="nota-header">
+          <h3>{{ nota.titulo }}</h3>
+          <div class="nota-actions">
+            <button v-if="!mostrandoArchivados" class="btn-icon btn-edit" @click="editarNota(nota)" title="Editar">✏️</button>
+            <button class="btn-icon btn-archive" @click="alternarArchivoNota(nota)" :title="nota.archivado ? 'Desarchivar' : 'Archivar'">
+              {{ nota.archivado ? '📤' : '🗃️' }}
+            </button>
+            <button class="btn-icon btn-delete" @click="eliminarNota(nota.id)" title="Eliminar">🗑️</button>
+          </div>
+        </div>
         <p class="nota-contenido">{{ nota.contenido }}</p>
         <div class="nota-footer">
           <span class="fecha">Guardado</span>
@@ -68,7 +137,7 @@ onMounted(cargarNotas);
     </div>
 
     <BaseModal v-if="mostrarModal" width="600px" @close="mostrarModal = false">
-      <h2 class="modal-title">Crear Apunte</h2>
+      <h2 class="modal-title">{{ modoEdicion ? 'Editar Apunte' : 'Crear Apunte' }}</h2>
 
       <div class="form-group">
         <input
@@ -122,6 +191,12 @@ onMounted(cargarNotas);
   margin-bottom: 35px;
 }
 
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .btn-primary {
   background-color: #728DA6;
   color: white;
@@ -171,11 +246,49 @@ onMounted(cargarNotas);
   box-shadow: 0 8px 24px rgba(62, 44, 37, 0.06);
 }
 
+.nota-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(62, 44, 37, 0.06);
+}
+
+.nota-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
 .nota-card h3 {
-  margin: 0 0 12px 0;
+  margin: 0;
   color: #3E2C25;
   font-size: 1.15rem;
   font-weight: 600;
+  flex: 1;
+}
+
+.nota-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.nota-card:hover .nota-actions {
+  opacity: 1;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.btn-icon:hover {
+  background: #F0EEEA;
 }
 
 .nota-contenido {

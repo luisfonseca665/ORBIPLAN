@@ -5,7 +5,8 @@
     </div>
     <div class="topbar-right">
       <div class="user-mini-profile">
-        <span class="avatar-small">LF</span>
+        <img v-if="usuarioFoto" :src="usuarioFoto" class="avatar-small-img" />
+        <span v-else class="avatar-small">{{ iniciales }}</span>
       </div>
       <button @click="handleLogout" class="btn-logout">Cerrar Sesión</button>
     </div>
@@ -13,11 +14,24 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
+const usuarioNombre = ref(localStorage.getItem('usuarioNombre') || '')
+const usuarioFoto = ref(localStorage.getItem('usuarioFoto') || '')
+
+const iniciales = computed(() => {
+  if (!usuarioNombre.value) return '??'
+  return usuarioNombre.value.split(' ').map(p => p[0]).join('').substring(0,2).toUpperCase()
+})
+
 const handleLogout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('usuarioNombre')
+  localStorage.removeItem('usuarioRol')
+  localStorage.removeItem('usuarioFoto')
   router.push('/login')
 }
 </script>
@@ -52,6 +66,15 @@ const handleLogout = () => {
   justify-content: center;
   font-weight: bold;
   font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.avatar-small-img {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 .btn-logout {
   background: white;
