@@ -213,7 +213,46 @@ const toggleVistaArchivados = () => {
 };
 
 const manejarSeleccion = (event) => {
-  archivoSeleccionado.value = event.target.files[0];
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Caso 5: Rol == 'ALUMNO'
+  const usuarioRol = localStorage.getItem('usuarioRol') || 'ALUMNO';
+  if (usuarioRol !== 'ALUMNO') {
+    alert("Error (Solo los alumnos entregan tareas)");
+    event.target.value = '';
+    archivoSeleccionado.value = null;
+    return;
+  }
+
+  // Caso 2: Tamaño <= 100MB
+  if (file.size > 100 * 1024 * 1024) {
+    alert("Error (Archivo demasiado grande)");
+    event.target.value = '';
+    archivoSeleccionado.value = null;
+    return;
+  }
+
+  // Caso 3: Formato en lista blanca
+  const ext = "." + file.name.split('.').pop().toLowerCase();
+  const formatosValidos = formatosPermitidos.split(',');
+  if (!formatosValidos.includes(ext)) {
+    alert("Error (Tipo de archivo no permitido)");
+    event.target.value = '';
+    archivoSeleccionado.value = null;
+    return;
+  }
+
+  // Caso 4: Regla de entrega (Fecha de vencimiento)
+  const entregaVencida = localStorage.getItem('entregaVencida') === 'true';
+  if (entregaVencida) {
+    alert("Error (La tarea a vencido y no permite entregas tardias)");
+    event.target.value = '';
+    archivoSeleccionado.value = null;
+    return;
+  }
+
+  archivoSeleccionado.value = file;
 };
 
 const confirmarSubida = async () => {

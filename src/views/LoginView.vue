@@ -48,6 +48,13 @@
             <label>Correo electrónico</label>
             <input v-model="registerForm.email" type="email" placeholder="ejemplo@correo.com" required :disabled="isLoading" />
           </div>
+          <div class="form-group">
+            <label>Rol / Perfil</label>
+            <select v-model="registerForm.rol" class="form-control" style="width: 100%; box-sizing: border-box; padding: 12px 16px; border: 1px solid #E8E6E1; border-radius: 8px; font-size: 0.95rem; color: #3E2C25; background: #FAFAF9; font-family: inherit;">
+              <option value="ALUMNO">Alumno</option>
+              <option value="JEFE_PROYECTO">Jefe de Proyecto</option>
+            </select>
+          </div>
 
           <div class="form-row">
             <div class="form-group">
@@ -82,6 +89,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const activeTab = ref('login')
 const isLoading = ref(false)
+const errorMessage = ref('')
 
 const loginForm = reactive({
   email: '',
@@ -188,6 +196,7 @@ const handleLogin = async () => {
 
     router.push('/') // Ir al Dashboard
   } catch (error) {
+    errorMessage.value = error.message
     alert(error.message)
   } finally {
     isLoading.value = false
@@ -198,6 +207,34 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   if (registerForm.password !== registerForm.confirmPassword) {
     alert('Las contraseñas no coinciden')
+    return
+  }
+
+  // Caso 5: Rol != JEFE_PROYECTO
+  if (registerForm.rol !== 'JEFE_PROYECTO') {
+    alert('Error (Permisos insuficientes)')
+    return
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const isEmailValid = emailRegex.test(registerForm.email)
+  const isPasswordValid = registerForm.password.length >= 8
+
+  // Caso 4: Email inválido y contraseña < 8 caracteres
+  if (!isEmailValid && !isPasswordValid) {
+    alert('Error (Datos inválidos)')
+    return
+  }
+
+  // Caso 3: Email inválido
+  if (!isEmailValid) {
+    alert('Error (Formato de email incorrecto)')
+    return
+  }
+
+  // Caso 2: Contraseña < 8 caracteres
+  if (!isPasswordValid) {
+    alert('Error (Falla política de seguridad)')
     return
   }
 
@@ -222,6 +259,7 @@ const handleRegister = async () => {
     activeTab.value = 'login'
     loginForm.email = registerForm.email
   } catch (error) {
+    errorMessage.value = error.message
     alert(error.message)
   } finally {
     isLoading.value = false

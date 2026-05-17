@@ -70,7 +70,26 @@ const alternarArchivoTarea = async (tarea) => {
 };
 
 const guardarTarea = async () => {
-  if (!nuevaTarea.value.titulo) return alert("Escribe el nombre de la tarea");
+  // Caso 1: Rol == 'MAESTRO'
+  const usuarioRol = localStorage.getItem('usuarioRol') || 'MAESTRO';
+  if (usuarioRol !== 'MAESTRO') {
+    return alert("Error (Permisos Insuficientes)");
+  }
+
+  // Caso 2: ¿Titulo valido?
+  if (!nuevaTarea.value.titulo || !nuevaTarea.value.titulo.trim()) {
+    return alert("Error (Titulo Vacio o Nulo)");
+  }
+
+  // Caso 3: ¿Prioridad asignada?
+  if (!nuevaTarea.value.prioridad) {
+    return alert("Error (Faltan Datos / Prioridad)");
+  }
+
+  // Caso 4: ¿Fecha de vencimiento valida?
+  if (!nuevaTarea.value.fechaVencimiento) {
+    return alert("Error (Formato de Fecha Invalido)");
+  }
 
   isLoading.value = true;
   const url = modoEdicion.value ? `http://localhost:8080/api/tareas/${idEdicion.value}` : 'http://localhost:8080/api/tareas';
